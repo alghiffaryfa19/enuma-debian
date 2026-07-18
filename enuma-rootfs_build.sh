@@ -64,7 +64,7 @@ chroot rootdir apt update
 chroot rootdir apt install -y \
     systemd sudo vim wget curl \
     network-manager openssh-server \
-    wpasupplicant dbus
+    wpasupplicant dbus firmware-atheros
 
 echo "📦 Installing device-specific .deb packages..."
 
