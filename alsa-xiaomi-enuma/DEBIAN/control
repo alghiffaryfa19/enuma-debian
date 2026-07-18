@@ -3,4 +3,5 @@ Version: 1.0
 Architecture: arm64
 Maintainer: alghiffaryfa19
 Depends: alsa-ucm-conf
+Replaces: alsa-ucm-conf
 Description: Alsa UCM Configuration for Xiaomi Pad 5 Pro 5G
