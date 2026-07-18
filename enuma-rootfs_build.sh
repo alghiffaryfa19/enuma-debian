@@ -193,6 +193,7 @@ umount rootdir || true
 rm -rf rootdir
 
 # uuid
+e2fsck -f -y "$ROOTFS_IMG"
 tune2fs -U $FILESYSTEM_UUID "$ROOTFS_IMG"
 
 echo "✅ DONE: $ROOTFS_IMG"
