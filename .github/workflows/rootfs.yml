@@ -1,0 +1,268 @@
+name: 🐧Build RootFS
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_version:
+        description: "Version (Release 7.1)"
+        required: true
+        default: "7.1"
+      build_type:
+        description: "Build Type"
+        options:
+          - desktop-only
+        required: true
+        type: choice
+        default: "all"
+      skip_release:
+        description: "Skip GitHub Release"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  prepare-release:
+    name: "📝 Prepare Release"
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: write
+    outputs:
+      release_tag: ${{ steps.generate_tag.outputs.release_tag }}
+      kernel_version: ${{ steps.kernel_version.outputs.kernel_version }}
+    steps:
+      - name: "📦 Get Kernel Version"
+        id: kernel_version
+        run: |
+          KERNEL_VER=${{ github.event.inputs.kernel_version || '7.1' }}
+          echo "kernel_version=$KERNEL_VER" >> $GITHUB_OUTPUT
+
+      - name: "🏷️ Generate Version Tag"
+        id: generate_tag
+        run: |
+          DATE_TAG=$(date -u '+%Y%m%d')
+          KERNEL_REF="${{ steps.kernel_version.outputs.kernel_version }}"
+          SHORT_SHA="${GITHUB_SHA:0:8}"
+          RELEASE_TAG="rootfs-$DATE_TAG-$KERNEL_REF-$SHORT_SHA"
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+
+      - name: "📄 Create GitHub Release"
+        if: ${{ !github.event.inputs.skip_release }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.generate_tag.outputs.release_tag }}
+          name: "Ubuntu/Debian for Enuma - ${{ steps.generate_tag.outputs.release_tag }}"
+          body: |
+            🐧 Ubuntu/Debian for Enuma
+
+            --- 
+
+            ### 📋 Build Information
+            | Project | Details |
+            |------|------|
+            | Kernel Version | ${{ steps.kernel_version.outputs.kernel_version }} |
+            | Build SHA | [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}) |
+            | Build Type | ${{ github.event.inputs.build_type || 'all' }} |
+            | Variants | ${{ 
+                github.event.inputs.build_type == 'server-only' && 'Debian Server, Ubuntu Server' ||
+                github.event.inputs.build_type == 'desktop-only' && 'Debian Desktop, Ubuntu Desktop' ||
+                'Debian Server/Desktop, Ubuntu Server/Desktop'
+              }} |
+            | Total Size | Building... |
+
+            --- 
+
+            ### 🔐 Default Credentials
+
+            **Server**
+            - Username: `root`
+            - Password: `1234` (Please change it immediately after logging in!)
+
+            **Desktop**
+            - Username: `luser`
+            - Password: `luser`
+            - Auto Login: Enabled
+            - Desktop Environment: GNOME + LightDM
+
+            --- 
+
+            ### 🛡️ Security Recommendations
+            1. Change default password immediately after login
+            2. Disable root remote login (optional)
+            3. Configure firewall rules
+
+            --- 
+
+            ### 📦 Images
+            Building...
+          draft: false
+          prerelease: false
+          files: ""
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-rootfs:
+    name: "🏗️ Build - ${{ matrix.distro }}"
+    runs-on: ubuntu-24.04-arm
+    needs: prepare-release
+    env:
+      APT_CACHE_DIR: /opt/apt-cache
+      RELEASE_TAG: ${{ needs.prepare-release.outputs.release_tag }}
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      matrix:
+        distro: ${{ fromJSON('["debian-desktop"]') }}
+      fail-fast: false
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🔧 Install Build Tools"
+        run: |
+          echo "Installing build tools..."
+          sudo apt-get update
+          sudo apt-get install -y \
+            debootstrap \
+            p7zip-full \
+            curl
+          echo "✅ Tools installed"
+
+      - name: "📥 Download kernel bundle"
+        run: |
+          KERNEL_VER="${{ needs.prepare-release.outputs.kernel_version }}"
+
+          echo "⬇️ Download bundle kernel-$KERNEL_VER"
+
+          gh release download "kernel-$KERNEL_VER" \
+            --pattern "*.deb" \
+            --repo "${{ github.repository }}" \
+            --clobber
+
+          echo "📂 Downloaded files:"
+          ls -lah *.deb
+
+          COUNT=$(ls *.deb | wc -l)
+          if [ "$COUNT" -lt 8 ]; then
+            echo "❌ Package incomplete"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "🏗️ Execute RootFS Build"
+        id: build_rootfs
+        run: |
+          DISTRO="${{ matrix.distro }}"
+          KERNEL_VER="${{ needs.prepare-release.outputs.kernel_version }}"
+
+          echo "========================================"
+          echo "Starting RootFS Build"
+          echo "----------------------------------------"
+          echo "Distro: $DISTRO"
+          echo "Kernel: $KERNEL_VER"
+          echo "Runner: $(uname -m)"
+          echo "Time: $(date)"
+          echo "========================================"
+
+          # Grant execute permission and execute the build script
+          chmod +x enuma-rootfs_build.sh
+          sudo bash ./enuma-rootfs_build.sh "$DISTRO" "$KERNEL_VER"
+
+          # Check build result - find dynamically generated compressed packages
+          # Find all .7z files
+          SEVEN_Z_FILES=$(find . -name "*.7z" | grep -v "enuma-rootfs_build.sh" | head -10)
+          if [[ -n "$SEVEN_Z_FILES" ]]; then
+            for FILE in $SEVEN_Z_FILES; do
+              FILE_SIZE=$(du -h "$FILE" | cut -f1)
+              echo "✅ Found build artifact: $FILE ($FILE_SIZE)"
+              echo "final_filename=$(basename "$FILE")" >> $GITHUB_OUTPUT
+              echo "file_path=$FILE" >> $GITHUB_OUTPUT
+              # Check file size
+              FILE_SIZE_KB=$(du -k "$FILE" | cut -f1)
+              FILE_SIZE_GB=$(($FILE_SIZE_KB / 1024 / 1024))
+              echo "file_size_gb=$FILE_SIZE_GB" >> $GITHUB_OUTPUT
+              break
+            done
+          else
+            echo "❌ Error: No .7z files generated!"
+            ls -la *.7z 2>/dev/null || echo "No .7z files found"
+            exit 1
+          fi
+
+          # Check Boot image (all server variants)
+          if [[ "$DISTRO" == "*-server" && -f "xiaomi-k20pro-boot.img" ]]; then
+            echo "✅ Found Boot image: xiaomi-k20pro-boot.img"
+            echo "boot_img_exists=true" >> $GITHUB_OUTPUT
+          fi
+        timeout-minutes: 90
+
+      - name: "📤 Upload large file to Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build_rootfs.outputs.final_filename }}
+          path: ${{ steps.build_rootfs.outputs.file_path }}
+          retention-days: 14
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: "🚀 Directly upload small files to Release"
+        if: ${{ !github.event.inputs.skip_release && steps.build_rootfs.outputs.file_size_gb < 2 }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: ${{ steps.build_rootfs.outputs.file_path }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "🚀 Directly upload Boot image to Release"
+        if: ${{ !github.event.inputs.skip_release && steps.build_rootfs.outputs.boot_img_exists == 'true' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: xiaomi-k20pro-boot.img
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-release:
+    name: "📝 Update Release Information"
+    runs-on: ubuntu-24.04-arm
+    needs: [prepare-release, build-rootfs]
+    permissions:
+      contents: write
+    if: ${{ !github.event.inputs.skip_release }}
+    steps:
+      - name: "📝 Update Release Information"
+        run: |
+          # Generate file list
+          echo "### 📦 Included Images" > filelist.md
+          echo "" >> filelist.md
+
+          # Find all small files uploaded to Release (via GitHub API)
+          echo "🔍 Getting Release assets list..."
+          gh release view ${{ needs.prepare-release.outputs.release_tag }} --json assets --jq '.assets[].name' > release_assets.txt 2>/dev/null || echo "" > release_assets.txt
+
+          # Add small files to list
+          while read -r asset; do
+            if [[ -n "$asset" ]]; then
+              echo "- **$asset**" >> filelist.md
+            fi
+          done < release_assets.txt
+
+          # Read current Release description
+          CURRENT_BODY=$(gh release view ${{ needs.prepare-release.outputs.release_tag }} --json body --jq '.body')
+
+          # Update Release description, replace image files section
+          NEW_BODY=$(echo "$CURRENT_BODY" | sed '/### 📦 镜像文件/,/---/c\### 📦 镜像文件\n'$(cat filelist.md | sed 's/\//\\\//g' | sed 's/&/\\&/g' | tr '\n' '\n'))
+
+          # Update Release
+          echo "📝 Updating Release information..."
+          gh release edit ${{ needs.prepare-release.outputs.release_tag }} --body "$NEW_BODY"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
