@@ -29,7 +29,7 @@ distro_version="trixie"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # 🔥 MULTI FLAVOUR
-FLAVOURS=("gnome")
+FLAVOURS=("phosh")
 BOOTMODES=("dual")
 
 for FLAVOUR in "${FLAVOURS[@]}"; do
@@ -124,19 +124,25 @@ EOF
 
         chroot rootdir apt update
 
-        chroot rootdir apt-get build-dep -y gnome-shell mutter gnome-settings-daemon
-        chroot rootdir apt install -y \
-            gnome-shell gnome-session gnome-terminal gdm3 firefox-esr
+        # chroot rootdir apt-get build-dep -y gnome-shell mutter gnome-settings-daemon
+        # chroot rootdir apt install -y \
+        #     gnome-shell gnome-session gnome-terminal gdm3 firefox-esr
 
-        wget https://github.com/alghiffaryfa19/gnome-shell-mobile-builder/releases/download/gnome-shell-97/gnome-shell-mobile.deb
-        wget https://github.com/alghiffaryfa19/gnome-shell-mobile-builder/releases/download/mutter/mutter-mobile.deb
-        wget https://github.com/alghiffaryfa19/gnome-shell-mobile-builder/releases/download/gsd/gsd-mobile.deb
+        # wget https://github.com/alghiffaryfa19/gnome-shell-mobile-builder/releases/download/gnome-shell-97/gnome-shell-mobile.deb
+        # wget https://github.com/alghiffaryfa19/gnome-shell-mobile-builder/releases/download/mutter/mutter-mobile.deb
+        # wget https://github.com/alghiffaryfa19/gnome-shell-mobile-builder/releases/download/gsd/gsd-mobile.deb
 
 
         cp ./*.deb rootdir/tmp/
         chroot rootdir bash -c 'apt-get install -y --allow-downgrades -o Dpkg::Options::="--force-overwrite" /tmp/*.deb'
         
-        chroot rootdir apt-mark hold gnome-shell mutter gnome-settings-daemon
+        # chroot rootdir apt-mark hold gnome-shell mutter gnome-settings-daemon
+
+        # chroot rootdir systemctl enable gdm3
+    elif [ "$FLAVOUR" = "phosh" ]; then
+        chroot rootdir apt update
+        chroot rootdir apt install -y \
+            phosh phoc squeekboard firefox-esr gdm3
 
         chroot rootdir systemctl enable gdm3
     fi
@@ -164,6 +170,15 @@ EOF
 AutomaticLoginEnable=true
 AutomaticLogin=luser
 EOF
+        if [ "$FLAVOUR" = "phosh" ]; then
+            mkdir -p rootdir/var/lib/AccountsService/users
+            cat > rootdir/var/lib/AccountsService/users/luser <<EOF
+[User]
+Session=phosh
+SystemAccount=false
+EOF
+            chmod 0600 rootdir/var/lib/AccountsService/users/luser
+        fi
     fi
 
     chroot rootdir systemctl enable NetworkManager
