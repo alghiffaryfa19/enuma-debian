@@ -142,7 +142,7 @@ EOF
     elif [ "$FLAVOUR" = "phosh" ]; then
         chroot rootdir apt update
         chroot rootdir apt install -y \
-            phosh phoc squeekboard firefox-esr gdm3
+            phosh phoc gnome-terminal squeekboard firefox-esr gdm3
 
         chroot rootdir systemctl enable gdm3
     fi

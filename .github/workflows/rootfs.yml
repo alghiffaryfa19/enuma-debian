@@ -1,6 +1,10 @@
 name: 🐧Build RootFS
 
 on:
+  workflow_run:
+    workflows: ["Build Kernel"]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       kernel_version:
