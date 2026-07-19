@@ -81,8 +81,8 @@ rm -f ../linux-xiaomi-enuma/lib/modules/*/build ../linux-xiaomi-enuma/lib/module
 
 cd ..
 git clone https://github.com/alghiffaryfa19/xiaomi-enuma-firmware
-mkdir -p firmware-xiaomi-enuma/usr/lib/firmware
-cp -r xiaomi-enuma-firmware/* firmware-xiaomi-enuma/usr/lib/firmware/
+mkdir -p firmware-xiaomi-enuma/
+cp -r xiaomi-enuma-firmware/* firmware-xiaomi-enuma/
 
 git clone https://github.com/map220v/alsa-ucm-conf
 mkdir -p alsa-xiaomi-enuma/usr/share/alsa/ucm2/Xiaomi/enuma
