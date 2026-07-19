@@ -53,6 +53,25 @@ mount -o loop "$ROOTFS_IMG" rootdir
 # bootstrap
 debootstrap --arch=arm64 "$distro_version" rootdir http://deb.debian.org/debian/
 
+mkdir -p rootdir/etc/apt/sources.list.d
+
+cat > rootdir/etc/apt/sources.list.d/debian.sources <<'EOF'
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie trixie-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: http://security.debian.org/debian-security
+Suites: trixie-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+
+# Hilangkan repository bawaan debootstrap agar tidak duplikat
+: > rootdir/etc/apt/sources.list
+
 # mount
 mount --bind /dev rootdir/dev
 mount --bind /dev/pts rootdir/dev/pts
@@ -104,7 +123,7 @@ if [ "$distro_variant" = "desktop" ]; then
         chroot rootdir systemctl disable gdm3 2>/dev/null || true
         chroot rootdir systemctl enable lightdm
 
-    elif [ "$FLAVOUR" = "gnome" ]; then
+    elif [ "$FLAVOUR" = "phosh" ]; then
     
         cat > rootdir/etc/apt/sources.list.d/debian.sources <<EOF
 Types: deb deb-src
@@ -123,6 +142,8 @@ EOF
     : > rootdir/etc/apt/sources.list
 
         chroot rootdir apt update
+        chroot rootdir apt install -y phosh phoc gnome-terminal squeekboard firefox-esr gdm3
+        chroot rootdir systemctl enable gdm3
 
         # chroot rootdir apt-get build-dep -y gnome-shell mutter gnome-settings-daemon
         # chroot rootdir apt install -y \
@@ -133,18 +154,14 @@ EOF
         # wget https://github.com/alghiffaryfa19/gnome-shell-mobile-builder/releases/download/gsd/gsd-mobile.deb
 
 
-        cp ./*.deb rootdir/tmp/
-        chroot rootdir bash -c 'apt-get install -y --allow-downgrades -o Dpkg::Options::="--force-overwrite" /tmp/*.deb'
+        # cp ./*.deb rootdir/tmp/
+        # chroot rootdir bash -c 'apt-get install -y --allow-downgrades -o Dpkg::Options::="--force-overwrite" /tmp/*.deb'
         
         # chroot rootdir apt-mark hold gnome-shell mutter gnome-settings-daemon
 
         # chroot rootdir systemctl enable gdm3
-    elif [ "$FLAVOUR" = "phosh" ]; then
-        chroot rootdir apt update
-        chroot rootdir apt install -y \
-            phosh phoc gnome-terminal squeekboard firefox-esr gdm3
-
-        chroot rootdir systemctl enable gdm3
+    elif [ "$FLAVOUR" = "gnome" ]; then
+        echo "GNOME flavour belum dikonfigurasi"
     fi
 
     # user
