@@ -83,7 +83,7 @@ chroot rootdir apt update
 chroot rootdir apt install -y \
     systemd sudo vim wget curl \
     network-manager openssh-server \
-    wpasupplicant dbus
+    wpasupplicant dbus firmware-atheros
 
 echo "📦 Installing device-specific .deb packages..."
 
@@ -142,7 +142,6 @@ EOF
     : > rootdir/etc/apt/sources.list
 
         chroot rootdir apt update
-        chroot rootdir apt install -y firmware-atheros
         chroot rootdir apt install -y phosh phoc gnome-terminal squeekboard firefox-esr gdm3
         chroot rootdir systemctl enable gdm3
 
