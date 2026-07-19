@@ -143,11 +143,7 @@ EOF
 
         # chroot rootdir systemctl enable gdm3
     elif [ "$FLAVOUR" = "gnome" ]; then
-        # chroot rootdir apt update
-        # chroot rootdir apt install -y \
-        #     phosh phoc gnome-terminal squeekboard firefox-esr gdm3
-
-        # chroot rootdir systemctl enable gdm3
+        echo "GNOME flavour belum dikonfigurasi"
     fi
 
     # user
