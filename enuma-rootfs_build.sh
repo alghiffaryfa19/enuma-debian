@@ -53,6 +53,25 @@ mount -o loop "$ROOTFS_IMG" rootdir
 # bootstrap
 debootstrap --arch=arm64 "$distro_version" rootdir http://deb.debian.org/debian/
 
+mkdir -p rootdir/etc/apt/sources.list.d
+
+cat > rootdir/etc/apt/sources.list.d/debian.sources <<'EOF'
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie trixie-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: http://security.debian.org/debian-security
+Suites: trixie-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+
+# Hilangkan repository bawaan debootstrap agar tidak duplikat
+: > rootdir/etc/apt/sources.list
+
 # mount
 mount --bind /dev rootdir/dev
 mount --bind /dev/pts rootdir/dev/pts
