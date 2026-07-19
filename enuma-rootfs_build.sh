@@ -64,7 +64,7 @@ chroot rootdir apt update
 chroot rootdir apt install -y \
     systemd sudo vim wget curl \
     network-manager openssh-server \
-    wpasupplicant dbus firmware-atheros
+    wpasupplicant dbus
 
 echo "📦 Installing device-specific .deb packages..."
 
@@ -104,7 +104,7 @@ if [ "$distro_variant" = "desktop" ]; then
         chroot rootdir systemctl disable gdm3 2>/dev/null || true
         chroot rootdir systemctl enable lightdm
 
-    elif [ "$FLAVOUR" = "gnome" ]; then
+    elif [ "$FLAVOUR" = "phosh" ]; then
     
         cat > rootdir/etc/apt/sources.list.d/debian.sources <<EOF
 Types: deb deb-src
@@ -123,6 +123,9 @@ EOF
     : > rootdir/etc/apt/sources.list
 
         chroot rootdir apt update
+        chroot rootdir apt install -y firmware-atheros
+        chroot rootdir apt install -y phosh phoc gnome-terminal squeekboard firefox-esr gdm3
+        chroot rootdir systemctl enable gdm3
 
         # chroot rootdir apt-get build-dep -y gnome-shell mutter gnome-settings-daemon
         # chroot rootdir apt install -y \
@@ -133,18 +136,18 @@ EOF
         # wget https://github.com/alghiffaryfa19/gnome-shell-mobile-builder/releases/download/gsd/gsd-mobile.deb
 
 
-        cp ./*.deb rootdir/tmp/
-        chroot rootdir bash -c 'apt-get install -y --allow-downgrades -o Dpkg::Options::="--force-overwrite" /tmp/*.deb'
+        # cp ./*.deb rootdir/tmp/
+        # chroot rootdir bash -c 'apt-get install -y --allow-downgrades -o Dpkg::Options::="--force-overwrite" /tmp/*.deb'
         
         # chroot rootdir apt-mark hold gnome-shell mutter gnome-settings-daemon
 
         # chroot rootdir systemctl enable gdm3
-    elif [ "$FLAVOUR" = "phosh" ]; then
-        chroot rootdir apt update
-        chroot rootdir apt install -y \
-            phosh phoc gnome-terminal squeekboard firefox-esr gdm3
+    elif [ "$FLAVOUR" = "gnome" ]; then
+        # chroot rootdir apt update
+        # chroot rootdir apt install -y \
+        #     phosh phoc gnome-terminal squeekboard firefox-esr gdm3
 
-        chroot rootdir systemctl enable gdm3
+        # chroot rootdir systemctl enable gdm3
     fi
 
     # user
