@@ -83,7 +83,9 @@ chroot rootdir apt update
 chroot rootdir apt install -y \
     systemd sudo vim wget curl \
     network-manager openssh-server \
-    wpasupplicant dbus
+    wpasupplicant dbus \
+    modemmanager mobile-broadband-provider-info \
+    resolvconf
 
 echo "📦 Installing device-specific .deb packages..."
 
