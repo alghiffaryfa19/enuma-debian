@@ -19,7 +19,7 @@ jobs:
         run: |
           echo "⚙️ Installing build tools..."
           apt update
-          apt install -y build-essential git meson ninja-build pkg-config bash-completion systemd-dev libglib2.0-dev libgudev-1.0-dev libudev-dev libsystemd-dev libpolkit-gobject-1-dev libmbim-glib-dev libqrtr-glib-dev valac gobject-introspection libgirepository1.0-dev xsltproc libdbus-1-dev
+          apt install -y build-essential git meson ninja-build pkg-config bash-completion systemd-dev libglib2.0-dev libgudev-1.0-dev libudev-dev libsystemd-dev libpolkit-gobject-1-dev libmbim-glib-dev libqrtr-glib-dev valac gobject-introspection libgirepository1.0-dev xsltproc libdbus-1-dev gettext
           echo "✅ Build tools installed"
 
       - name: "🔨 Build ModemManager"
