@@ -5,7 +5,7 @@ set -e
 echo "🚀 Building ModemManager"
 git clone https://github.com/meizu-m2172-mainline/ModemManager
 cd ModemManager
-meson setup build --prefix=/usr --buildtype=release -Dsystemdsystemunitdir=/lib/systemd/system -Dwerror=false -Dmbim=true -Dqmi=true -Dqrtr=true -Dpolkit=strict
+meson setup build --prefix=/usr --buildtype=release -Dsystemdsystemunitdir=/lib/systemd/system -Dwerror=false -Dmbim=true -Dqmi=true -Dqrtr=true -Dpolkit=strict --force-fallback-for=libqmi
 ninja -C build
 DESTDIR=$(pwd)/../modemmanager-enuma ninja -C build install
 cd ..
