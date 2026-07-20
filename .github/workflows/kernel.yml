@@ -37,6 +37,7 @@ jobs:
           echo "⚙️ Installing build tools..."
           sudo apt update
           sudo apt install -y build-essential flex bison libssl-dev libelf-dev bc ccache clang llvm lld systemd-ukify systemd-boot-efi
+          sudo apt install -y meson ninja-build pkg-config libglib2.0-dev libgudev-1.0-dev libsystemd-dev libpolkit-gobject-1-dev libmbim-glib-dev libqmi-glib-dev libqrtr-glib-dev valac gobject-introspection libgirepository1.0-dev xsltproc
           echo "✅ Build tools installed"
 
           mkdir -p /home/runner/.ccache
@@ -122,6 +123,8 @@ jobs:
             - linux-xiaomi-enuma.deb
             - firmware-xiaomi-enuma.deb  
             - alsa-xiaomi-enuma.deb
+            - modem-userspace-enuma.deb
+            - modemmanager-enuma.deb
           draft: false
           prerelease: false
           files: |

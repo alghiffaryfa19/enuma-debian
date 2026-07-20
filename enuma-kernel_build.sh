@@ -96,3 +96,66 @@ ln -s "../../Xiaomi/enuma/enuma.conf" "alsa-xiaomi-enuma/usr/share/alsa/ucm2/con
 dpkg-deb --build --root-owner-group linux-xiaomi-enuma
 dpkg-deb --build --root-owner-group firmware-xiaomi-enuma
 dpkg-deb --build --root-owner-group alsa-xiaomi-enuma
+
+# modem-userspace
+echo "🚀 Building modem-userspace"
+git clone https://github.com/meizu-m2172-mainline/modem-userspace
+mkdir -p modem-userspace-enuma/usr/local/sbin
+mkdir -p modem-userspace-enuma/etc/udev/rules.d
+mkdir -p modem-userspace-enuma/etc/systemd/system
+mkdir -p modem-userspace-enuma/DEBIAN
+
+cat << 'EOF' > modem-userspace-enuma/DEBIAN/control
+Package: modem-userspace-enuma
+Version: 1.0
+Architecture: arm64
+Maintainer: alghiffaryfa19
+Description: Modem userspace scripts and rules for enuma
+EOF
+
+cat << 'EOF' > modem-userspace-enuma/DEBIAN/postinst
+#!/bin/sh
+udevadm control --reload || true
+systemctl daemon-reload || true
+systemctl enable --now m2172-modem.service || true
+EOF
+chmod +x modem-userspace-enuma/DEBIAN/postinst
+
+install -m755 modem-userspace/scripts/m2172_sahara_fw_loader.py modem-userspace-enuma/usr/local/sbin/m2172-sahara-fw-loader
+install -m755 modem-userspace/scripts/m2172-modem-bringup.sh    modem-userspace-enuma/usr/local/sbin/m2172-modem-bringup.sh
+install -m755 modem-userspace/scripts/sdx55m-data-up.sh          modem-userspace-enuma/usr/local/sbin/sdx55m-data-up.sh
+install -m644 modem-userspace/udev/78-mm-sdx55m.rules     modem-userspace-enuma/etc/udev/rules.d/
+install -m644 modem-userspace/udev/79-mm-sdx55m-net.rules modem-userspace-enuma/etc/udev/rules.d/
+install -m644 modem-userspace/systemd/m2172-modem.service modem-userspace-enuma/etc/systemd/system/
+
+dpkg-deb --build --root-owner-group modem-userspace-enuma
+
+# ModemManager
+echo "🚀 Building ModemManager"
+git clone https://github.com/meizu-m2172-mainline/ModemManager
+cd ModemManager
+meson setup build --prefix=/usr --buildtype=release -Dsystemdsystemunitdir=/lib/systemd/system -Dwerror=false -Dmbim=true -Dqmi=true -Dqrtr=true -Dpolkit=strict
+ninja -C build
+DESTDIR=$(pwd)/../modemmanager-enuma ninja -C build install
+cd ..
+
+mkdir -p modemmanager-enuma/DEBIAN
+cat << 'EOF' > modemmanager-enuma/DEBIAN/control
+Package: modemmanager-enuma
+Version: 1.20.0-custom
+Architecture: arm64
+Maintainer: alghiffaryfa19
+Conflicts: modemmanager
+Replaces: modemmanager
+Provides: modemmanager
+Description: Custom ModemManager for enuma
+EOF
+
+cat << 'EOF' > modemmanager-enuma/DEBIAN/postinst
+#!/bin/sh
+systemctl daemon-reload || true
+systemctl restart ModemManager.service || true
+EOF
+chmod +x modemmanager-enuma/DEBIAN/postinst
+
+dpkg-deb --build --root-owner-group modemmanager-enuma
