@@ -7,6 +7,7 @@ jobs:
   build:
     name: "Build ModemManager"
     runs-on: ubuntu-24.04-arm
+    container: debian:trixie
     permissions:
       contents: write
 
@@ -17,8 +18,8 @@ jobs:
       - name: "🔧 Setup Build Environment"
         run: |
           echo "⚙️ Installing build tools..."
-          sudo apt update
-          sudo apt install -y meson ninja-build pkg-config libglib2.0-dev libgudev-1.0-dev libsystemd-dev libpolkit-gobject-1-dev libmbim-glib-dev libqmi-glib-dev libqrtr-glib-dev valac gobject-introspection libgirepository1.0-dev xsltproc libdbus-1-dev
+          apt update
+          apt install -y git meson ninja-build pkg-config libglib2.0-dev libgudev-1.0-dev libsystemd-dev libpolkit-gobject-1-dev libmbim-glib-dev libqmi-glib-dev libqrtr-glib-dev valac gobject-introspection libgirepository1.0-dev xsltproc libdbus-1-dev
           echo "✅ Build tools installed"
 
       - name: "🔨 Build ModemManager"
