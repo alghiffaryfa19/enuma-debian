@@ -1,0 +1,59 @@
+name: Build ALSA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: "Build ALSA"
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: write
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "🔧 Setup Build Environment"
+        run: |
+          echo "⚙️ Installing build tools..."
+          sudo apt update
+          sudo apt install -y build-essential git
+          echo "✅ Build tools installed"
+
+      - name: "🔨 Build ALSA"
+        run: |
+          echo "🚀 Building ALSA configs"
+          bash enuma-alsa_build.sh
+          echo "✅ ALSA build completed"
+
+      - name: "📤 Upload Build Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: alsa-xiaomi-enuma
+          path: "*.deb"
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: "🏷️ Create GitHub Release"
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: alsa-latest
+          name: "ALSA Xiaomi Enuma"
+          body: |
+            🧩 ALSA UCM configuration for Enuma
+
+            --- 
+
+            ### 📦 Package List
+            - alsa-xiaomi-enuma.deb
+          draft: false
+          prerelease: false
+          files: |
+            *.deb
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

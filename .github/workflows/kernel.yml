@@ -120,7 +120,6 @@ jobs:
 
             ### 📦 Package List
             - linux-xiaomi-enuma.deb
-            - alsa-xiaomi-enuma.deb
             - modem-userspace-enuma.deb
           draft: false
           prerelease: false
