@@ -18,7 +18,7 @@ export OBJDUMP="llvm-objdump"
 export READELF="llvm-readelf"
 export STRIP="llvm-strip"
 
-git clone https://gitlab.postmarketos.org/alghiffaryfa19/linux-sm8250.git --branch 7.1.0-dev --depth 1 linux
+git clone https://gitlab.postmarketos.org/alghiffaryfa19/linux-sm8250.git --branch 7.1.0-dev-charger --depth 1 linux
 cd linux
 
 # MIPPS
