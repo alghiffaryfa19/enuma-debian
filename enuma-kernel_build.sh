@@ -80,9 +80,9 @@ make -j$(nproc) ARCH=arm64 CC="ccache clang" LLVM=1 INSTALL_MOD_PATH=../linux-xi
 rm -f ../linux-xiaomi-enuma/lib/modules/*/build ../linux-xiaomi-enuma/lib/modules/*/source
 
 cd ..
-# git clone https://github.com/alghiffaryfa19/xiaomi-enuma-firmware
-# mkdir -p firmware-xiaomi-enuma/
-# cp -r xiaomi-enuma-firmware/* firmware-xiaomi-enuma/
+git clone https://github.com/alghiffaryfa19/xiaomi-enuma-firmware
+mkdir -p firmware-xiaomi-enuma/
+cp -r xiaomi-enuma-firmware/* firmware-xiaomi-enuma/
 
 git clone https://github.com/map220v/alsa-ucm-conf
 mkdir -p alsa-xiaomi-enuma/usr/share/alsa/ucm2/Xiaomi/enuma
